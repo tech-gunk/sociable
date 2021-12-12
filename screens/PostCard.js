@@ -39,7 +39,7 @@ export default class PostCard extends Component {
                     </View>
                     <View style={styles.actionContainer}>
                         <View style={styles.likeButton}>
-                            <Ionicons name={"heart"} size={RFValue(30)} color={"black"} />
+                            <Ionicons name={"heart"} size={RFValue(30)} color={"#efefef"} />
                             <Text style={styles.likeText}>12k</Text>
                         </View>
                     </View>
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
         borderRadius: RFValue(30)
     },
     likeText: {
-        color: "black",
+        color: "#efefef",
         fontSize: RFValue(25),
         marginLeft: RFValue(5)
     }
