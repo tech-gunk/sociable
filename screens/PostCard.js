@@ -4,47 +4,119 @@ import {
     Text,
     StyleSheet,
     Image,
+    TouchableOpacity,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { RFValue } from "react-native-responsive-fontsize";
 
+import firebase from "firebase";
+
 export default class PostCard extends Component {
     constructor(props) {
         super(props);
-        this.state = {};
+        this.state = {
+            light_theme: true,
+            post_id: this.props.post.key,
+            post_data: this.props.post.value,
+            is_liked: false,
+            likes: this.props.post.value.likes
+        };
     }
 
-    componentDidMount() { }
+    componentDidMount() {
+        this.fetchUser();
+    }
+
+    fetchUser = () => {
+        let theme;
+        firebase
+            .database()
+            .ref("/users/" + firebase.auth().currentUser.uid)
+            .on("value", (snapshot) => {
+                theme = snapshot.val().current_theme
+                this.setState({ light_theme: theme === "light" })
+            })
+    }
+
+    likeAction = () => {
+        if (this.state.is_liked) {
+            firebase
+                .database()
+                .ref("posts")
+                .child(this.state.post_id)
+                .child("likes")
+                .set(firebase.database.ServerValue.increment(-1));
+            this.setState({ likes: (this.state.likes -= 1), is_liked: false });
+        } else {
+            firebase
+                .database()
+                .ref("posts")
+                .child(this.state.post_id)
+                .child("likes")
+                .set(firebase.database.ServerValue.increment(1));
+            this.setState({ likes: (this.state.likes += 1), is_liked: true });
+        }
+    };
 
     render() {
+        let post = this.state.post_data
+        let images = {
+            image_1: require("../assets/image_1.jpg"),
+            image_2: require("../assets/image_2.jpg"),
+            image_3: require("../assets/image_3.jpg"),
+            image_4: require("../assets/image_4.jpg"),
+            image_5: require("../assets/image_5.jpg"),
+            image_6: require("../assets/image_6.jpg"),
+            image_7: require("../assets/image_7.jpg")
+        };
         return (
-            <View style={styles.container}>
-                <View style={styles.cardContainer}>
+            <TouchableOpacity style={styles.container} onPress={() => this.props.navigation.navigate("PostScreen", post = this.props.post)}>
+                <View style={this.state.light_theme ? styles.cardContainerLight : styles.cardContainer}>
                     <View style={styles.authorContainer}>
                         <View style={styles.authorImageContainer}>
                             <Image
-                                source={require("../assets/profile_img.png")}
+                                source={{ uri: post.profile_image }}
                                 style={styles.profileImage}
                             ></Image>
                         </View>
                         <View style={styles.authorNameContainer}>
-                            <Text style={styles.authorNameText}>{this.props.post.author}</Text>
+                            <Text style={this.state.light_theme ? styles.authorNameTextLight : styles.authorNameText}>{post.author}</Text>
                         </View>
                     </View>
-                    <Image source={require("../assets/post.jpeg")} style={styles.postImage} />
+                    <Image source={images[post.preview_image]} style={styles.postImage} />
                     <View style={styles.captionContainer}>
-                        <Text style={styles.captionText}>
-                            {this.props.post.caption}
+                        <Text style={this.state.light_theme ? styles.captionTextLight : styles.captionText}>
+                            {post.caption}
                         </Text>
                     </View>
                     <View style={styles.actionContainer}>
-                        <View style={styles.likeButton}>
-                            <Ionicons name={"heart"} size={RFValue(30)} color={"#efefef"} />
-                            <Text style={styles.likeText}>12k</Text>
-                        </View>
+                        <TouchableOpacity
+                            style={
+                                this.state.is_liked
+                                    ? styles.likeButtonLiked
+                                    : styles.likeButtonDisliked
+                            }
+                            onPress={() => this.likeAction()}
+                        >
+                            <Ionicons
+                                name={"heart"}
+                                size={RFValue(30)}
+                                color={this.state.light_theme ? "black" : "white"}
+                            />
+
+                            <Text
+                                style={
+                                    this.state.light_theme
+                                        ? styles.likeTextLight
+                                        : styles.likeText
+                                }
+                            >
+                                {this.state.likes}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
-            </View>
+            </TouchableOpacity>
         );
     }
 }
@@ -55,8 +127,23 @@ const styles = StyleSheet.create({
     },
     cardContainer: {
         margin: RFValue(13),
+        backgroundColor: "#2a2a2a",
+        borderRadius: RFValue(20),
+        padding: RFValue(20)
+    },
+    cardContainerLight: {
+        margin: RFValue(13),
+
         backgroundColor: "white",
         borderRadius: RFValue(20),
+        shadowColor: "rgb(0, 0, 0)",
+        shadowOffset: {
+            width: 3,
+            height: 3
+        },
+        shadowOpacity: RFValue(0.5),
+        shadowRadius: RFValue(5),
+        elevation: RFValue(2),
         padding: RFValue(20)
     },
     authorContainer: {
@@ -79,6 +166,10 @@ const styles = StyleSheet.create({
         justifyContent: "center"
     },
     authorNameText: {
+        color: "white",
+        fontSize: RFValue(20)
+    },
+    authorNameTextLight: {
         color: "black",
         fontSize: RFValue(20)
     },
@@ -92,6 +183,11 @@ const styles = StyleSheet.create({
     captionContainer: {},
     captionText: {
         fontSize: 13,
+        color: "white",
+        paddingTop: RFValue(10)
+    },
+    captionTextLight: {
+        fontSize: 13,
         color: "black",
         paddingTop: RFValue(10)
     },
@@ -100,18 +196,34 @@ const styles = StyleSheet.create({
         alignItems: "center",
         padding: RFValue(10)
     },
-    likeButton: {
+    likeButtonLiked: {
         width: RFValue(160),
         height: RFValue(40),
         justifyContent: "center",
         alignItems: "center",
         flexDirection: "row",
-        backgroundColor: "#b15487",
+        backgroundColor: "#eb3948",
+        borderRadius: RFValue(30)
+    },
+    likeButtonDisliked: {
+        width: RFValue(160),
+        height: RFValue(40),
+        justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "row",
+        borderColor: "#eb3948",
+        borderWidth: 2,
         borderRadius: RFValue(30)
     },
     likeText: {
-        color: "#efefef",
-        fontSize: RFValue(25),
-        marginLeft: RFValue(5)
+        color: "white",
+        fontSize: 25,
+        marginLeft: 25,
+        marginTop: 6
+    },
+    likeTextLight: {
+        fontSize: 25,
+        marginLeft: 25,
+        marginTop: 6
     }
 });

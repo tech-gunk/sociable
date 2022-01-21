@@ -1,3 +1,2 @@
-# Sociable
-Able to socialize!
-<img src="./assets/banner.png">
+# spectagram-stage-9
+project solution c89
